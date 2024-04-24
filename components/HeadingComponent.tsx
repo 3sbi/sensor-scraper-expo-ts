@@ -94,17 +94,14 @@ export default function Compass() {
         filename,
         "text/csv"
       );
-      console.log(
-        magnetometerDataToSave.length,
-        accelerometerDataToSave.length
-      );
 
       let linesToSave: string =
         "Magnetometer_x, Magnetometer_y ,Magnetometer_z, Heading (angle), Accelerometer_x,Accelerometer_y, Accelerometer_z\n";
-      for (const mLine of magnetometerDataToSave) {
-        const aLine = accelerometerDataToSave.find(
-          (l) => l.timestamp === mLine.timestamp
-        );
+
+      // I know that timestamps for magnetometer and accelerometer would be different because it requrires some time to add listener to them both
+      // that is why we are using index and pretend that timestamp is relatively the same
+      for (const [index, mLine] of magnetometerDataToSave.entries()) {
+        const aLine = accelerometerDataToSave[index];
         const heading = getHeading(mLine.x, mLine.y);
         const newLine = `${mLine.x}, ${mLine.y}, ${mLine.z}, ${heading}, ${aLine?.x}, ${aLine?.y}, ${aLine?.z}\n`;
         linesToSave = linesToSave + newLine;

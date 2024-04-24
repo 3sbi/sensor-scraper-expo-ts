@@ -6,7 +6,7 @@ import HeadingComponent from "./components/HeadingComponent";
 export default function App() {
   return (
     <View style={styles.container}>
-      <StatusBar style="auto" />Е
+      <StatusBar style="auto" />
       <HeadingComponent />
     </View>
   );
