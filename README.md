@@ -29,4 +29,12 @@ npm install --global eas-cli
 sudo eas build -p android --profile preview
 ```
 
-It can be built locally using android studio emalator and react-native, but it doesn't work properly for me because of expo packages that crash the build
+It can be built locally using android studio emalator and react-native, but it doesn't work properly for me because of expo packages that crash the build.
+
+If you want to use it just download [.rar file](./app-release.rar) and extract apk from it
+
+
+## License
+
+
+This project is [GPL v2 licensed](./LICENSE)
