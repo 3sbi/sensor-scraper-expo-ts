@@ -9,7 +9,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "prebuild": "npx expo prebuild",
-    "build:android": "npx react-native build-android --local --mode=release"
+    "build:android": "eas build -p android --profile preview --local"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.1.3",
