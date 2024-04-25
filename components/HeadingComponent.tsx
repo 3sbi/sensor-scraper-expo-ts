@@ -11,13 +11,17 @@ import {
   MagnetometerMeasurement,
   Accelerometer,
   AccelerometerMeasurement,
+  Gyroscope,
+  GyroscopeMeasurement,
 } from "expo-sensors";
 import { Subscription } from "expo-sensors/build/Pedometer";
 import * as FileSystem from "expo-file-system";
 
+type DataToSave<T> = Array<T & { timestamp: number }>;
+
 export default function Compass() {
   const [speed, setSpeed] = useState<number>(100);
-  const [accelerometerData, setaaccelerometerData] = useState({
+  const [accelerometerData, setAccelerometerData] = useState({
     x: 0,
     y: 0,
     z: 0,
@@ -27,23 +31,29 @@ export default function Compass() {
     y: 0,
     z: 0,
   });
+  const [gyroscopeData, setGyroscopeData] = useState({ x: 0, y: 0, z: 0 });
   const [subscriptions, setSubscriptions] = useState<{
     accelerometer: Subscription | null;
     magnetometer: Subscription | null;
+    gyroscope: Subscription | null;
   } | null>(null);
 
   const [magnetometerDataToSave, setMagnetometerDataToSave] = useState<
-    Array<MagnetometerMeasurement & { timestamp: number }>
+    DataToSave<MagnetometerMeasurement>
   >([]);
 
   const [accelerometerDataToSave, setAccelerometerDataToSave] = useState<
-    Array<AccelerometerMeasurement & { timestamp: number }>
+    DataToSave<AccelerometerMeasurement>
+  >([]);
+  const [gyroscopeDataToSave, setGyroscopeDataToSave] = useState<
+    DataToSave<GyroscopeMeasurement>
   >([]);
 
   const _updateSpeed = (speed: number) => {
-    setSpeed(speed);
     Accelerometer.setUpdateInterval(speed);
     Magnetometer.setUpdateInterval(speed);
+    Gyroscope.setUpdateInterval(speed);
+    setSpeed(speed);
   };
 
   const getHeading = (x: number, y: number): number => {
@@ -59,19 +69,33 @@ export default function Compass() {
         return [...prev, { ...data, timestamp: Date.now() }];
       });
     });
+
     const aSub = Accelerometer.addListener((data) => {
-      setaaccelerometerData(data);
+      setAccelerometerData(data);
       setAccelerometerDataToSave((prev) => {
         return [...prev, { ...data, timestamp: Date.now() }];
       });
     });
+
+    const gSub = Gyroscope.addListener((data) => {
+      setGyroscopeData(data);
+      setGyroscopeDataToSave((prev) => {
+        return [...prev, { ...data, timestamp: Date.now() }];
+      });
+    });
+
     _updateSpeed(100);
-    setSubscriptions({ magnetometer: mSub, accelerometer: aSub });
+    setSubscriptions({
+      magnetometer: mSub,
+      accelerometer: aSub,
+      gyroscope: gSub,
+    });
   };
 
   const _unsubscribe = () => {
     subscriptions?.magnetometer && subscriptions.magnetometer.remove();
     subscriptions?.accelerometer && subscriptions.accelerometer.remove();
+    subscriptions?.gyroscope && subscriptions.gyroscope.remove();
     setSubscriptions(null);
   };
 
@@ -96,14 +120,15 @@ export default function Compass() {
       );
 
       let linesToSave: string =
-        "Magnetometer_x, Magnetometer_y ,Magnetometer_z, Heading (angle), Accelerometer_x,Accelerometer_y, Accelerometer_z\n";
+        "Magnetometer_x, Magnetometer_y, Magnetometer_z, Heading (angle), Accelerometer_x, Accelerometer_y, Accelerometer_z, Gyroscope_x, Gyroscope_y, Gyroscope_z\n";
 
       // I know that timestamps for magnetometer and accelerometer would be different because it requrires some time to add listener to them both
       // that is why we are using index and pretend that timestamp is relatively the same
       for (const [index, mLine] of magnetometerDataToSave.entries()) {
         const aLine = accelerometerDataToSave[index];
+        const gLine = gyroscopeDataToSave[index];
         const heading = getHeading(mLine.x, mLine.y);
-        const newLine = `${mLine.x}, ${mLine.y}, ${mLine.z}, ${heading}, ${aLine?.x}, ${aLine?.y}, ${aLine?.z}\n`;
+        const newLine = `${mLine.x}, ${mLine.y}, ${mLine.z}, ${heading}, ${aLine?.x}, ${aLine?.y}, ${aLine?.z}, ${gLine.x}, ${gLine.y}, ${gLine.z}\n`;
         linesToSave = linesToSave + newLine;
       }
       await FileSystem.writeAsStringAsync(uri, linesToSave);
@@ -145,6 +170,16 @@ export default function Compass() {
         <Text style={styles.text}>x: {accelerometerData.x}</Text>
         <Text style={styles.text}>y: {accelerometerData.y}</Text>
         <Text style={styles.text}>z: {accelerometerData.z}</Text>
+      </View>
+
+      <View style={styles.container}>
+        <Text style={styles.text}>Gyroscope:</Text>
+        <Text style={styles.text}>
+          {subscriptions?.gyroscope ? "RECORDING" : "NOT RECORDING"}
+        </Text>
+        <Text style={styles.text}>x: {gyroscopeData.x}</Text>
+        <Text style={styles.text}>y: {gyroscopeData.y}</Text>
+        <Text style={styles.text}>z: {gyroscopeData.z}</Text>
       </View>
 
       <View style={styles.buttonContainer}>
